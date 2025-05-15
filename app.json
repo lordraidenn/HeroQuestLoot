@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "HeroQuestLoot",
+    "slug": "HeroQuestLoot",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.hanzohasashi.HeroQuestLoot"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e93766e4-fc85-47b3-b7d8-3f5628dfb821"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e93766e4-fc85-47b3-b7d8-3f5628dfb821"
+      }
+    },
+    "owner": "hanzohasashi"
+  }
+}
