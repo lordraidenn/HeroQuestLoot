@@ -1,7 +1,7 @@
 import { useColorScheme as _useColorScheme } from 'react-native';
 
 /**
- * Gibt die aktuelle Farbeinstellung des Systems zurück: 'light' oder 'dark'.
+ * Gibt die aktuelle Farbeinstellung des Systems zurï¿½ck: 'light' oder 'dark'.
  */
 export function useColorScheme() {
   return _useColorScheme();
