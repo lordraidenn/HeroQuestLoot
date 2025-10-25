@@ -11,7 +11,12 @@ export type HeroClass =
   | 'Barde'
   | 'Berserker'
   | 'Entdecker'
-  | 'Druide';
+  | 'Druide'
+  | 'Kleriker'
+  | 'Nekromant'
+  | 'Ranger'
+  | 'Paladin'
+  | 'Mentor';
 
 export const getClassIcon = (cls: HeroClass) => {
   try {
@@ -40,6 +45,16 @@ export const getClassIcon = (cls: HeroClass) => {
         return require('../../assets/explorer_icon.png');
       case 'Druide':
         return require('../../assets/druid_icon.png');
+      case 'Kleriker':
+        return require('../../assets/cleric_icon.png');
+      case 'Nekromant':
+        return require('../../assets/necromancer_icon.png');
+      case 'Ranger':
+        return require('../../assets/ranger_icon.png');
+      case 'Paladin':
+        return require('../../assets/paladin_icon.png');
+      case 'Mentor':
+        return require('../../assets/mentor_icon.png');
       default:
         return require('../../assets/default_icon.png');
     }

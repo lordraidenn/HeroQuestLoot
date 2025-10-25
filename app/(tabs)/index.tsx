@@ -116,6 +116,12 @@ type ClassAbilities = Record<HeroClass, LevelAbilities[]>;
 
 interface AppSettings {
   animationsDisabled: boolean;
+  monsters?: Monster[];
+  classAbilities?: ClassAbilities;
+  monsterLootFileName?: string;
+  classFileName?: string;
+  monsterFileUri?: string;
+  classFileUri?: string;
 }
 
 const DEFAULT_SETTINGS = {
@@ -138,6 +144,11 @@ const parseClassAbilities = (): ClassAbilities => {
     Berserker: [],
     Entdecker: [],
     Druide: [],
+    Kleriker: [],
+    Nekromant: [],
+    Ranger: [],
+    Paladin: [],
+    Mentor: [],
   };
 
   const data = levelAbilitiesData.Tabelle1;
@@ -149,7 +160,7 @@ const parseClassAbilities = (): ClassAbilities => {
     Object.entries(row).forEach(([key, value]) => {
       if (key === 'Heroe' || !value) return;
 
-      const expMatch = key.match(/(\d+)\s*EXP/); // erkennt z. B. „300 EXP“
+      const expMatch = key.match(/(\d+)\s*EXP/);
       const expRequired = expMatch ? parseInt(expMatch[1], 10) : 0;
 
       abilities[heroClass].push({
@@ -158,7 +169,6 @@ const parseClassAbilities = (): ClassAbilities => {
       });
     });
 
-    // sortieren nach EXP → wichtig bei Excel!
     abilities[heroClass].sort((a, b) => a.expRequired - b.expRequired);
   });
 
@@ -179,6 +189,11 @@ const parseClassAbilitiesFromData = (data: any[]): ClassAbilities => {
     Berserker: [],
     Entdecker: [],
     Druide: [],
+    Kleriker: [],
+    Nekromant: [],
+    Ranger: [],
+    Paladin: [],
+    Mentor: [],
   };
 
   data.forEach((row: any) => {
@@ -188,7 +203,7 @@ const parseClassAbilitiesFromData = (data: any[]): ClassAbilities => {
     Object.entries(row).forEach(([key, value]) => {
       if (key === 'Heroe' || !value) return;
 
-      const expMatch = key.match(/(\d+)\s*EXP/); // z. B. "2400 EXP"
+      const expMatch = key.match(/(\d+)\s*EXP/);
       const expRequired = expMatch ? parseInt(expMatch[1], 10) : 0;
 
       abilities[heroClass].push({
@@ -218,7 +233,7 @@ const calculateLevel = (hero: Hero, abilities: ClassAbilities = CLASS_ABILITIES)
     }
   }
 
-  return level; // ⬅️ KEIN künstliches Limit mehr
+  return level;
 };
 
 const processInventory = (inventoryString: string): InventoryItem[] => {
@@ -361,15 +376,36 @@ const getStyles = (isAnimating: boolean) =>
       marginVertical: 1,
     },
     button: {
-      backgroundColor: '#5dade2',
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
       padding: 10,
       marginVertical: 5,
       borderRadius: 5,
       alignItems: 'center',
+      borderWidth: 1,
+      borderColor: 'white',
+    },
+    neutralButton: {
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      marginVertical: 5,
+      borderColor: 'white',
+      borderWidth: 1,
+      alignItems: 'center',
     },
     buttonText: {
-      color: 'white',
+      color: '#f0f0f0',
       fontWeight: 'bold',
+      fontSize: 12,
+    },
+    heroQuestButtonText: {
+      color: '#f1c40f',
+      fontWeight: 'bold',
+      fontSize: 18,
+      textShadowColor: '#e67e22',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 1.5,
     },
     deleteButton: {
       backgroundColor: '#e74c3c',
@@ -379,15 +415,20 @@ const getStyles = (isAnimating: boolean) =>
       alignItems: 'center',
     },
     monsterButton: {
-      backgroundColor: '#2c1414',
+      backgroundColor: 'rgba(255, 99, 71, 0.08)',
       padding: 10,
       borderRadius: 8,
       marginVertical: 5,
       alignItems: 'center',
+      borderColor: '#ff6b6b',
+      borderWidth: 1,
     },
     monsterText: {
-      color: '#c0392b',
+      color: '#ff6b6b',
       fontWeight: 'bold',
+      textShadowColor: '#000',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 2,
     },
     backButton: {
       backgroundColor: '#FF6347',
@@ -406,7 +447,7 @@ const getStyles = (isAnimating: boolean) =>
       padding: 20,
     },
     modalContent: {
-      backgroundColor: 'rgba(51, 51, 51, 0.8)',
+      backgroundColor: 'rgba(51, 51, 51, 0.7)',
       borderRadius: 10,
       padding: 20,
       zIndex: 1,
@@ -419,7 +460,7 @@ const getStyles = (isAnimating: boolean) =>
       borderRadius: 5,
     },
     inventoryInput: {
-      backgroundColor: 'rgba(85, 85, 85, 0.8)',
+      backgroundColor: 'rgba(85, 85, 85, 0.6)',
       color: 'white',
       padding: 10,
       minHeight: 100,
@@ -448,6 +489,27 @@ const getStyles = (isAnimating: boolean) =>
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 100,
+    },
+    modalButton: {
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      paddingVertical: 12,
+      paddingHorizontal: 25,
+      borderRadius: 8,
+      marginVertical: 6,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.2)',
+    },
+    modalButtonText: {
+      color: '#f0f0f0',
+      fontWeight: 'bold',
+      fontSize: 15,
+    },
+    neutralButtonText: {
+      color: '#e0e0e0',
+      fontWeight: 'bold',
+      fontSize: 14,
+      textAlign: 'center',
     },
     diceResults: {
       marginTop: 20,
@@ -491,12 +553,38 @@ const getStyles = (isAnimating: boolean) =>
     },
     buttonRow: {
       flexDirection: 'row',
-      justifyContent: 'space-around',
+      gap: 8,
       marginTop: 20,
+      alignItems: 'stretch',
+    },
+    confirmButton: {
+      flex: 1,
+      backgroundColor: 'rgba(40, 180, 99, 0.15)',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: '#2ecc71',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 42,
+    },
+    cancelButton: {
+      flex: 1,
+      backgroundColor: 'rgba(231, 76, 60, 0.15)',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: '#e74c3c',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 42,
     },
     settingText: {
-      color: 'white',
+      color: '#e0e0e0',
       fontSize: 16,
+      marginBottom: 5,
     },
     diceContainer: {
       width: 60,
@@ -622,6 +710,19 @@ const getStyles = (isAnimating: boolean) =>
       width: 30,
       height: 30,
       marginRight: 10,
+    },
+    closeButton: {
+      position: 'absolute',
+      top: 60,
+      right: 30,
+      backgroundColor: 'rgba(255,255,255,0.3)',
+      borderRadius: 20,
+      padding: 15,
+    },
+    closeButtonText: {
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: 20,
     },
   });
 
@@ -900,14 +1001,25 @@ const HeroItem = React.forwardRef(
               responsiveStyles={responsiveStyles}
             />
 
-            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+            <View
+              style={{
+                position: 'absolute',
+                top: 20,
+                right: -50,
+                width: 150,
+                height: 150,
+                borderRadius: 25,
+                overflow: 'hidden',
+                backgroundColor: 'transparent',
+                zIndex: 5,
+              }}
+            >
               <Image
                 source={getClassIcon(heroWithDefaultClass.class)}
                 style={{
-                  width: 50,
-                  height: 130,
-                  marginLeft: 10,
-                  borderRadius: 25,
+                  width: '100%',
+                  height: '100%',
+                  resizeMode: 'contain',
                 }}
               />
             </View>
@@ -946,7 +1058,7 @@ const HeroItem = React.forwardRef(
           isVisible={showAbilities}
           onClose={() => setShowAbilities(false)}
           styles={styles}
-          classAbilities={classAbilities} // ✅ WICHTIG!
+          classAbilities={classAbilities}
         />
       </View>
     );
@@ -1015,10 +1127,109 @@ const MonsterButton = ({
   );
 };
 
+const globalStyles = StyleSheet.create({
+  zoomedImageContainer: {
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    borderRadius: 10,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomedImage: {
+    maxWidth: '100%',
+    maxHeight: '100%',
+  },
+  closeButton: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 20,
+    padding: 10,
+    zIndex: 10,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  tooltipContainer: {
+    padding: 8,
+    backgroundColor: '#222',
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  tooltipText: {
+    color: 'white',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  tooltipImage: {
+    width: '100%',
+    maxWidth: '100%',
+    aspectRatio: 15,
+    resizeMode: 'contain',
+    borderRadius: 4,
+  },
+});
+
+interface ImageZoomModalProps {
+  visible: boolean;
+  imageSource: ImageSourcePropType;
+  onClose: () => void;
+}
+
+const ImageZoomModal = ({
+  visible,
+  imageSource,
+  onClose,
+}: {
+  visible: boolean;
+  imageSource: ImageSourcePropType | null;
+  onClose: () => void;
+}) => {
+  const styles = StyleSheet.create({
+    modalContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.9)',
+    },
+    image: {
+      width: '100%',
+      height: '80%',
+      resizeMode: 'contain',
+    },
+    closeButton: {
+      position: 'absolute',
+      top: 40,
+      right: 20,
+      backgroundColor: 'rgba(255,255,255,0.3)',
+      borderRadius: 20,
+      padding: 10,
+    },
+    closeText: {
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+  });
+
+  if (!visible || !imageSource) return null;
+
+  return (
+    <Modal isVisible={visible} onBackdropPress={onClose} style={{ margin: 0 }}>
+      <View style={styles.modalContainer}>
+        <Image source={imageSource} style={styles.image} />
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Text style={styles.closeText}>Schließen</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+};
+
 // Hauptkomponente
 export default function App() {
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [originalSettings, setOriginalSettings] = useState(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [originalSettings, setOriginalSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const { width, height } = useWindowDimensions();
   const [welcomeScreen, setWelcomeScreen] = useState(true);
   const [heroes, setHeroes] = useState<Hero[]>([]);
@@ -1032,6 +1243,10 @@ export default function App() {
   const [inventoryModalVisible, setInventoryModalVisible] = useState(false);
   const [editableInventory, setEditableInventory] = useState<string>('');
   const [newHero, setNewHero] = useState<Partial<Hero>>({});
+  const [plusInputs, setPlusInputs] = useState<Record<string, string>>({});
+  const [minusInputs, setMinusInputs] = useState<Record<string, string>>({});
+  const [zoomedImage, setZoomedImage] = useState<ImageSourcePropType | null>(null);
+  const [zoomVisible, setZoomVisible] = useState(false);
   const [showDiceAnimation, setShowDiceAnimation] = useState(false);
   const [diceRolls, setDiceRolls] = useState<{ w6: number[]; w20: number[] } | null>(null);
   const [rewardAnimations, setRewardAnimations] = useState<RewardAnimationType[]>([]);
@@ -1052,23 +1267,30 @@ export default function App() {
   }>({});
   const styles = getStyles(isAnimating);
 
-  useEffect(() => {
-    console.log('Aktuelle Monster:', monsters);
-    console.log('Aktuelle ClassAbilities:', classAbilities);
-    updateHeroLevels();
-  }, [monsters, classAbilities]);
-
-  const diceAnimationStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
-
   const [showTooltipMonster, setShowTooltipMonster] = useState(false);
   const [showTooltipClass, setShowTooltipClass] = useState(false);
+
+  // When opening:
+  const handleImagePress = () => {
+    setZoomVisible(true);
+  };
+
+  // When closing:
+  const handleClose = () => {
+    setZoomVisible(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      setZoomVisible(false);
+    };
+  }, []);
 
   const getResponsiveStyles = (width: number) => {
     const isMobile = width < 768;
     const isTablet = width >= 768 && width < 1024;
-    const isDesktop = width >= 1024;
+    const isLargeTablet = width >= 1024 && width < 1280;
+    const isDesktop = width >= 1280;
 
     return StyleSheet.create({
       mainContentContainer: {
@@ -1125,9 +1347,11 @@ export default function App() {
       classIconSmall: {
         width: 30,
         height: 30,
-        marginRight: 10,
-        marginTop: isDesktop ? 4 : 0,
-        marginLeft: isDesktop ? -6 : 0,
+        marginRight: 12,
+        marginTop: 4,
+        marginLeft: 0,
+        position: 'relative',
+        top: 2,
       },
       heroListItem: {
         fontSize: isMobile ? 14 : 16,
@@ -1146,8 +1370,43 @@ export default function App() {
       },
       heroInventoryText: {
         color: 'lightblue',
-        fontSize: isMobile ? 10 : 12,
+        fontSize: 12,
         marginVertical: 1,
+        flexWrap: 'wrap',
+        flexShrink: 1,
+        maxWidth: '100%',
+      },
+      modalContent: {
+        width: isMobile ? '90%' : isTablet ? '70%' : isLargeTablet ? '60%' : '50%',
+        maxHeight: isMobile ? '70%' : '80%',
+      },
+      inventoryInput: {
+        minHeight: isMobile ? 100 : isTablet ? 150 : 200,
+      },
+      zoomedImageContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.95)',
+      },
+      zoomedImage: {
+        width: '100%',
+        height: undefined,
+        aspectRatio: 1,
+        resizeMode: 'contain',
+      },
+      closeButton: {
+        position: 'absolute',
+        top: isMobile ? 40 : 60,
+        right: isMobile ? 20 : 30,
+        backgroundColor: 'rgba(255,255,255,0.3)',
+        borderRadius: 20,
+        padding: isMobile ? 10 : 15,
+      },
+      closeButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: isMobile ? 18 : 20,
       },
     });
   };
@@ -1173,10 +1432,9 @@ export default function App() {
           await AsyncStorage.getItem('classAbilitiesFileName'),
         );
 
-        await loadMonsterData(); // setzt und puffert
-        await loadClassData(); // setzt und puffert
+        await loadMonsterData();
+        await loadClassData();
 
-        // Sobald geladen, Zustand als Original merken
         setOriginalSettings((prev) => settings);
       } catch (error) {
         console.error('Fehler beim Laden der Daten:', error);
@@ -1184,7 +1442,6 @@ export default function App() {
 
         const fallbackMonsters = processMonsterData(monstersData.Tabelle1);
 
-        // Fallback direkt übernehmen
         setMonsters(fallbackMonsters);
         setClassAbilities(CLASS_ABILITIES);
         setMonsterLootFileName(DEFAULT_MONSTER_LOOT_FILE);
@@ -1280,7 +1537,6 @@ export default function App() {
         await loadMonsterData();
       } catch (monsterError) {
         console.error('Error loading monster data:', monsterError);
-        // Fallback to default monsters
         setMonsters(
           monstersData.Tabelle1.map((item, index) => ({
             id: `${item.Monster}-${index}`,
@@ -1299,7 +1555,6 @@ export default function App() {
         await loadClassData();
       } catch (classError) {
         console.error('Error loading class data:', classError);
-        // Fallback to default class abilities
         setClassAbilities(CLASS_ABILITIES);
       }
 
@@ -1316,7 +1571,6 @@ export default function App() {
       const monsterFileUri = await AsyncStorage.getItem('monsterLootFile');
       const monsterFileName = await AsyncStorage.getItem('monsterLootFileName');
 
-      // Wenn schon Monster im State existieren → NICHT überschreiben!
       const monstersAlreadySet = settings.monsters && settings.monsters.length > 0;
 
       if (monstersAlreadySet) {
@@ -1324,10 +1578,9 @@ export default function App() {
         return;
       }
 
-      let monstersToLoad: MonsterType[] = [];
+      let monstersToLoad: Monster[] = [];
 
       if (monsterFileUri && monsterFileName) {
-        // 🔄 Benutzerdefinierte Datei laden
         if (Platform.OS === 'web') {
           const response = await fetch(monsterFileUri);
           const fileData = await response.arrayBuffer();
@@ -1349,7 +1602,6 @@ export default function App() {
           monsterFileUri,
         }));
       } else {
-        // 🟡 Nur wenn KEINE gespeichert sind → Standard verwenden
         console.warn('⚠️ Keine gespeicherte Monsterdatei – nutze Standardliste.');
 
         monstersToLoad = processMonsterData(monstersData.Tabelle1);
@@ -1365,7 +1617,6 @@ export default function App() {
     } catch (error) {
       console.error('❌ Fehler beim Laden der Monsterdatei:', error);
 
-      // ❗ Nur wenn auch wirklich nichts existiert
       if (!settings.monsters || settings.monsters.length === 0) {
         const fallback = processMonsterData(monstersData.Tabelle1);
         setMonsters(fallback);
@@ -1389,7 +1640,7 @@ export default function App() {
 
       if (!classFileUri || !classFileName) {
         console.warn('⚠️ Keine Klassendatei gefunden – überspringe Laden.');
-        return; // Kein Zurücksetzen, wenn nichts gespeichert ist
+        return;
       }
 
       let parsedData;
@@ -1426,7 +1677,6 @@ export default function App() {
     } catch (error) {
       console.error('❌ Fehler beim Laden der Klassendaten:', error);
 
-      // Nur zurücksetzen, wenn es noch keine gültige Einstellung gibt
       if (
         !originalSettings.classAbilities ||
         Object.keys(originalSettings.classAbilities).length === 0
@@ -1479,43 +1729,36 @@ export default function App() {
     }));
   };
 
-  // In der loadDefaultData Funktion:
   const loadDefaultData = async () => {
     try {
-      console.log('Lade Standard-Monsterdaten...'); // Debug-Log
+      console.log('Lade Standard-Monsterdaten...');
 
-      // Sicherstellen, dass monstersData korrekt importiert wird
       if (!monstersData?.Tabelle1) {
         throw new Error('Monsterdaten-Struktur nicht gefunden');
       }
 
-      const defaultMonsters = monstersData.Tabelle1.map((item: any, index: number) => {
-        // Debug-Ausgabe für jedes Monster
-        console.log(`Verarbeite Monster ${index}:`, item);
+      const defaultMonsters = monstersData.Tabelle1.map((item: any, index: number) => ({
+        id: `${item.Monster}-${index}`,
+        name: item.Monster || `Monster ${index}`,
+        w6: item.W6 || 0,
+        w20: item.W20 || 0,
+        guaranteed: item['Garantierte Belohnung'] || 'Keine Belohnung',
+        rewards: Object.fromEntries(
+          Array.from({ length: 20 }, (_, i) => [
+            i + 1,
+            item[i + 1] || item[`Würfel ${i + 1}`] || '',
+          ]),
+        ),
+      }));
 
-        return {
-          id: `${item.Monster}-${index}`,
-          name: item.Monster || `Monster ${index}`,
-          w6: item.W6 || 0,
-          w20: item.W20 || 0,
-          guaranteed: item['Garantierte Belohnung'] || 'Keine Belohnung',
-          rewards: Object.fromEntries(
-            Array.from({ length: 20 }, (_, i) => [
-              i + 1,
-              item[i + 1] || item[`Würfel ${i + 1}`] || '',
-            ]),
-          ),
-        };
-      });
-
-      console.log('Standard-Monster geladen:', defaultMonsters); // Debug-Log
+      console.log('Standard-Monster geladen:', defaultMonsters);
       setMonsters(defaultMonsters);
       setMonsterLootFileName(DEFAULT_MONSTER_LOOT_FILE);
       setWelcomeScreen(false);
     } catch (error) {
       console.error('Fehler beim Laden der Standard-Monster:', error);
       Alert.alert('Fehler', 'Standard-Monster konnten nicht geladen werden');
-      setMonsters([]); // Leere Liste als Fallback
+      setMonsters([]);
     }
   };
 
@@ -1536,6 +1779,7 @@ export default function App() {
                 {
                   uri: URL.createObjectURL(file),
                   name: file.name,
+                  file: file,
                 },
               ],
             });
@@ -1556,35 +1800,41 @@ export default function App() {
       const uri = result.assets[0].uri;
       const fileName = result.assets[0].name;
 
-      await AsyncStorage.setItem('monsterLootFile', uri);
-      await AsyncStorage.setItem('monsterLootFileName', fileName);
-
       let monstersToLoad;
 
       if (Platform.OS === 'web') {
-        const response = await fetch(uri);
-        const fileData = await response.arrayBuffer();
+        const file = result.assets[0].file;
+        const fileData = await file.arrayBuffer();
         const workbook = XLSX.read(fileData, { type: 'array' });
         const parsedData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
         monstersToLoad = processMonsterData(parsedData);
       } else {
-        monstersToLoad = await loadCustomMonsterData(uri, fileName);
+        const fileType = fileName.split('.').pop()?.toLowerCase();
+        const fileContent = await FileSystem.readAsStringAsync(uri, {
+          encoding:
+            fileType === 'json' ? FileSystem.EncodingType.UTF8 : FileSystem.EncodingType.Base64,
+        });
+
+        if (fileType === 'json') {
+          monstersToLoad = processMonsterData(JSON.parse(fileContent));
+        } else {
+          const workbook = XLSX.read(fileContent, { type: 'base64' });
+          monstersToLoad = processMonsterData(
+            XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]),
+          );
+        }
       }
 
-      // Nicht direkt setzen – sondern in settings puffern
       setSettings((prev) => ({
         ...prev,
         monsters: monstersToLoad,
         monsterLootFileName: fileName,
       }));
 
-      Alert.alert(
-        'Erfolg',
-        'Monsterliste wurde vorübergehend geladen. Bitte speichern, um zu übernehmen.',
-      );
+      Alert.alert('Erfolg', 'Monsterliste wurde geladen!');
     } catch (error) {
-      console.error('Fehler beim Laden der Monsterdatei:', error);
-      Alert.alert('Fehler', 'Die Monsterdatei konnte nicht geladen werden.');
+      console.error('Fehler beim Laden der Monsterliste:', error);
+      Alert.alert('Fehler', 'Datei konnte nicht geladen werden.');
     }
   };
 
@@ -1593,7 +1843,6 @@ export default function App() {
       await AsyncStorage.removeItem('monsterLootFile');
       await AsyncStorage.removeItem('monsterLootFileName');
 
-      // Nur in settings puffern, nicht direkt übernehmen
       const standardMonster = monstersData.Tabelle1.map((item, index) => ({
         id: `${item.Monster}-${index}`,
         name: item.Monster,
@@ -1611,7 +1860,7 @@ export default function App() {
         monsterLootFileName: DEFAULT_MONSTER_LOOT_FILE,
       }));
 
-      Alert.alert('Hinweis', 'Standard-Monsterliste vorgemerkt. Bitte „Speichern“ drücken.');
+      Alert.alert('Hinweis', 'Standard-Monsterliste vorgemerkt. Bitte „Speichern" drücken.');
     } catch (error) {
       console.error('Fehler beim Zurücksetzen der Monsterliste:', error);
       Alert.alert('Fehler', 'Monsterliste konnte nicht zurückgesetzt werden');
@@ -1683,7 +1932,6 @@ export default function App() {
       await AsyncStorage.setItem('classAbilitiesFile', uri);
       await AsyncStorage.setItem('classAbilitiesFileName', fileName);
 
-      // Änderung: NICHT sofort übernehmen
       setSettings((prev) => ({
         ...prev,
         classAbilities: newClassAbilities,
@@ -1703,12 +1951,10 @@ export default function App() {
     }
   };
 
-  // Neue Validierungsfunktion
   const validateAndParseClassData = (data: any[]): ClassAbilities => {
     const validClasses = Object.keys(CLASS_ABILITIES);
     const newAbilities: ClassAbilities = { ...CLASS_ABILITIES };
 
-    // Zurücksetzen aller Fähigkeiten
     Object.keys(newAbilities).forEach((cls) => {
       newAbilities[cls as HeroClass] = [];
     });
@@ -1742,14 +1988,13 @@ export default function App() {
       await AsyncStorage.removeItem('classAbilitiesFile');
       await AsyncStorage.removeItem('classAbilitiesFileName');
 
-      // Nur in settings puffern
       setSettings((prev) => ({
         ...prev,
         classAbilities: CLASS_ABILITIES,
         classFileName: DEFAULT_CLASS_ABILITIES_FILE,
       }));
 
-      Alert.alert('Hinweis', 'Standard-Klassenliste vorgemerkt. Bitte „Speichern“ drücken.');
+      Alert.alert('Hinweis', 'Standard-Klassenliste vorgemerkt. Bitte „Speichern" drücken.');
     } catch (error) {
       console.error('Fehler beim Zurücksetzen der Klassendatei:', error);
       Alert.alert('Fehler', 'Klassenliste konnte nicht zurückgesetzt werden');
@@ -2152,7 +2397,7 @@ export default function App() {
     const updatedHero: Hero = {
       ...selectedHero,
       ...newHero,
-      id, // stellt sicher, dass die ID auf jeden Fall gesetzt ist
+      id,
       class: newHero.class || selectedHero?.class || 'Barbar',
       level: calculateLevel(
         {
@@ -2212,7 +2457,7 @@ export default function App() {
       if (confirmed) deleteConfirmed();
     } else {
       Alert.alert('Helden löschen', 'Möchtest du diesen Helden wirklich löschen?', [
-        { text: '❌ Abbrechen', style: 'cancel' },
+        { text: 'Abbrechen', style: 'cancel' },
         {
           text: 'Löschen',
           style: 'destructive',
@@ -2233,6 +2478,10 @@ export default function App() {
     setSelectedMonster(null);
     setHeroSearchTerm('');
     setMonsterSearchTerm('');
+    setModalVisible(false);
+    setInventoryModalVisible(false);
+    setSettingsModalVisible(false);
+    setZoomedImage(null);
     saveHeroes(heroes);
   };
 
@@ -2266,7 +2515,6 @@ export default function App() {
     });
   };
 
-  // Neue Funktion zum Aktualisieren der Helden-Level
   const updateHeroLevels = () => {
     setHeroes((prevHeroes) =>
       prevHeroes.map((hero) => ({
@@ -2305,6 +2553,10 @@ export default function App() {
     { label: 'Ruhmesplättchen', key: 'glory' },
   ];
 
+  const diceAnimationStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -2315,15 +2567,40 @@ export default function App() {
               style={[styles.backgroundImage, responsiveStyles.welcomeImage]}
             />
             <Image source={heroquestLogo} style={styles.logo} />
-            <Button title="🔹 Spiel starten" onPress={loadGameData} />
-            <Button title="🦸 Neuen Helden erstellen" onPress={() => setModalVisible(true)} />
-            <Button
-              title="⚙️ Einstellungen"
-              onPress={() => {
-                setOriginalSettings(settings);
-                setSettingsModalVisible(true);
-              }}
-            />
+            <View style={{ marginTop: 20 }}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.neutralButton,
+                  pressed && { backgroundColor: 'rgba(255,255,255,0.1)' },
+                ]}
+                onPress={loadGameData}
+              >
+                <Text style={styles.heroQuestButtonText}>🔹 Spiel starten</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.neutralButton,
+                  pressed && { backgroundColor: 'rgba(255,255,255,0.1)' },
+                ]}
+                onPress={() => setModalVisible(true)}
+              >
+                <Text style={styles.heroQuestButtonText}>🦸 Neuen Helden erstellen</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.neutralButton,
+                  pressed && { backgroundColor: 'rgba(255,255,255,0.1)' },
+                ]}
+                onPress={() => {
+                  setOriginalSettings(settings);
+                  setSettingsModalVisible(true);
+                }}
+              >
+                <Text style={styles.heroQuestButtonText}>⚙️ Einstellungen</Text>
+              </Pressable>
+            </View>
           </View>
         ) : (
           <>
@@ -2454,7 +2731,7 @@ export default function App() {
                         isAnimating={isAnimating}
                         styles={styles}
                         responsiveStyles={responsiveStyles}
-                        classAbilities={classAbilities} // Add this line
+                        classAbilities={classAbilities}
                       />
                     )}
                   />
@@ -2513,8 +2790,6 @@ export default function App() {
         <Modal isVisible={settingsModalVisible}>
           <View style={styles.modalContainer}>
             <Text style={styles.columnTitle}>⚙️ Einstellungen</Text>
-
-            {/* 📁 Monster-/Loot-Datei */}
             <View style={{ marginBottom: 20 }}>
               <Text style={styles.settingText}>Monster-/Loot-Datei:</Text>
               <Text style={{ color: 'lightgray', fontSize: 12 }}>
@@ -2522,73 +2797,70 @@ export default function App() {
                   ? settings.monsterLootFileName
                   : monsterLootFileName}
               </Text>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginTop: 5,
-                }}
-              >
+              <View style={styles.buttonRow}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Button title="📂 Laden" onPress={handleLoadMonsterLootFile} />
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <TouchableOpacity onPress={() => setShowTooltipMonster(true)}>
-                      <Text style={{ fontSize: 20, marginLeft: 6, color: 'white' }}>ℹ️</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() =>
-                        downloadAndShareTemplate(
-                          'https://example.com/deinPfad/Loot_Vorlage.xlsx',
-                          'Loot_Vorlage.xlsx',
-                        )
-                      }
-                    >
-                      <Text style={{ fontSize: 20, marginLeft: 10, color: 'lightblue' }}>⬇️</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Pressable style={styles.neutralButton} onPress={handleLoadMonsterLootFile}>
+                    <Text style={styles.neutralButtonText}>📂 Laden</Text>
+                  </Pressable>
+                  <TouchableOpacity onPress={() => setShowTooltipMonster(true)}>
+                    <Text style={{ fontSize: 20, marginLeft: 6, color: 'white' }}>ℹ️</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() =>
+                      downloadAndShareTemplate(
+                        'https://raw.githubusercontent.com/lordraidenn/HeroQuestLoot/main/assets/Loot_Vorlage.xlsx',
+                        'Loot_Vorlage.xlsx',
+                      )
+                    }
+                  >
+                    <Text style={{ fontSize: 20, marginLeft: 10, color: 'lightblue' }}>⬇️</Text>
+                  </TouchableOpacity>
                 </View>
 
-                <Button title="🔄 Zurücksetzen" onPress={resetMonsterLootFile} />
+                <Pressable style={styles.neutralButton} onPress={resetMonsterLootFile}>
+                  <Text style={styles.neutralButtonText}>🔄 Zurücksetzen</Text>
+                </Pressable>
               </View>
 
-              {/* Tooltip separat platzieren */}
+              <ImageZoomModal
+                visible={!!zoomedImage}
+                imageSource={zoomedImage}
+                onClose={() => setZoomedImage(null)}
+                styles={styles} // Pass the styles here
+              />
+
+              {/* Tooltip-Beispiel */}
               <Tooltip
                 isVisible={showTooltipMonster}
                 content={
-                  <View
-                    style={{
-                      padding: 5,
-                      backgroundColor: '#222',
-                      borderRadius: 5,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text style={{ color: 'white', marginBottom: 5, textAlign: 'center' }}>
+                  <View style={globalStyles.tooltipContainer}>
+                    <Text style={globalStyles.tooltipText}>
                       Beispiel für Monster-/Belohnungsliste. Aufbau Zeile 1: Monster | W6 | W20 |
                       Garantierte Belohnung | 1 | 2 | usw. Darunter die entsprechenden Namen und
                       Werte.
                     </Text>
-                    <Image
-                      source={require('../../assets/Loot.png')}
-                      style={{
-                        width: '100%',
-                        maxWidth: '100%',
-                        aspectRatio: 15,
-                        resizeMode: 'contain',
-                        borderRadius: 4,
+                    <TouchableOpacity
+                      onPress={() => {
+                        setZoomedImage(require('../../assets/Loot.png'));
+                        setShowTooltipMonster(false);
                       }}
-                    />
+                    >
+                      <Image
+                        source={require('../../assets/Loot.png')}
+                        style={globalStyles.tooltipImage}
+                      />
+                    </TouchableOpacity>
                   </View>
                 }
                 placement="top"
                 onClose={() => setShowTooltipMonster(false)}
               >
-                <></>
+                <View>
+                  <Text> </Text>
+                </View>
               </Tooltip>
             </View>
 
-            {/* 🧙‍♀️ Klassen/Fähigkeiten-Datei */}
             <View style={{ marginBottom: 20 }}>
               <Text style={styles.settingText}>Klassen/Fähigkeiten-Datei:</Text>
               <Text style={{ color: 'lightgray', fontSize: 12 }}>
@@ -2596,73 +2868,61 @@ export default function App() {
                   ? settings.classFileName
                   : classFileName}
               </Text>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginTop: 5,
-                }}
-              >
+              <View style={styles.buttonRow}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Button title="📂 Laden" onPress={handleLoadClassFile} />
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <TouchableOpacity onPress={() => setShowTooltipClass(true)}>
-                      <Text style={{ fontSize: 20, marginLeft: 6, color: 'white' }}>ℹ️</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() =>
-                        downloadAndShareTemplate(
-                          'https://example.com/deinPfad/Level_Vorlage.xlsx',
-                          'Level_Vorlage.xlsx',
-                        )
-                      }
-                    >
-                      <Text style={{ fontSize: 20, marginLeft: 10, color: 'lightblue' }}>⬇️</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Pressable style={styles.neutralButton} onPress={handleLoadClassFile}>
+                    <Text style={styles.neutralButtonText}>📂 Laden</Text>
+                  </Pressable>
+                  <TouchableOpacity onPress={() => setShowTooltipClass(true)}>
+                    <Text style={{ fontSize: 20, marginLeft: 6, color: 'white' }}>ℹ️</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() =>
+                      downloadAndShareTemplate(
+                        'https://raw.githubusercontent.com/lordraidenn/HeroQuestLoot/main/assets/Level_Vorlage.xlsx',
+                        'Level_Vorlage.xlsx',
+                      )
+                    }
+                  >
+                    <Text style={{ fontSize: 20, marginLeft: 10, color: 'lightblue' }}>⬇️</Text>
+                  </TouchableOpacity>
                 </View>
 
-                <Button title="🔄 Zurücksetzen" onPress={resetClassFile} />
+                <Pressable style={styles.neutralButton} onPress={resetClassFile}>
+                  <Text style={styles.neutralButtonText}>🔄 Zurücksetzen</Text>
+                </Pressable>
               </View>
 
-              {/* Tooltip separat platzieren */}
               <Tooltip
                 isVisible={showTooltipClass}
                 content={
-                  <View
-                    style={{
-                      padding: 8,
-                      backgroundColor: '#222',
-                      borderRadius: 6,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text style={{ color: 'white', marginBottom: 8, textAlign: 'center' }}>
+                  <View style={globalStyles.tooltipContainer}>
+                    <Text style={globalStyles.tooltipText}>
                       Beispiel für eine Klassen-/Fähigkeitenliste. Wichtig: Erste Zeile = Level &
                       EXP. Darunter die Fähigkeiten. Spalte A listet die Klassen auf (Ausnahme Zeile
                       1).
                     </Text>
-                    <Image
-                      source={require('../../assets/Level-Fähigkeiten.png')}
-                      style={{
-                        width: '100%',
-                        maxWidth: '100%',
-                        aspectRatio: 15,
-                        resizeMode: 'contain',
-                        borderRadius: 4,
+                    <TouchableOpacity
+                      onPress={() => {
+                        setZoomedImage(require('../../assets/Level-Fähigkeiten.png'));
+                        setShowTooltipClass(false);
                       }}
-                    />
+                    >
+                      <Image
+                        source={require('../../assets/Level-Fähigkeiten.png')}
+                        style={globalStyles.tooltipImage}
+                      />
+                    </TouchableOpacity>
                   </View>
                 }
                 placement="top"
                 onClose={() => setShowTooltipClass(false)}
               >
-                <></>
+                <View>
+                  <Text> </Text>
+                </View>
               </Tooltip>
             </View>
-
-            {/* 🔧 Restliche Einstellungen */}
             <View style={styles.settingRow}>
               <Text style={styles.settingText}>Animationen:</Text>
               <Switch
@@ -2675,11 +2935,9 @@ export default function App() {
                 }
               />
             </View>
-
-            {/* ✅ / ❌ Button-Zeile */}
             <View style={styles.buttonRow}>
-              <Button
-                title="✅ Speichern"
+              <Pressable
+                style={styles.confirmButton}
                 onPress={async () => {
                   try {
                     if (settings.monsterLootFileName) {
@@ -2714,14 +2972,19 @@ export default function App() {
                     Alert.alert('Fehler', 'Einstellungen konnten nicht gespeichert werden.');
                   }
                 }}
-              />
-              <Button
-                title="❌ Abbrechen"
+              >
+                <Text style={styles.modalButtonText}>✅ Speichern</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.cancelButton}
                 onPress={() => {
                   setSettings(originalSettings);
                   setSettingsModalVisible(false);
                 }}
-              />
+              >
+                <Text style={styles.modalButtonText}>❌ Abbrechen</Text>
+              </Pressable>
             </View>
           </View>
         </Modal>
@@ -2733,7 +2996,6 @@ export default function App() {
                 {newHero.id ? '✏️ Held bearbeiten' : '🦸 Neuer Held'}
               </Text>
 
-              {/* Name Input */}
               <View style={{ marginBottom: 10 }}>
                 <Text style={styles.buttonText}>NAME:</Text>
                 <TextInput
@@ -2743,7 +3005,6 @@ export default function App() {
                 />
               </View>
 
-              {/* Klassenauswahl (nur bei Neuerstellung) */}
               {!newHero.id && (
                 <>
                   <Text style={styles.buttonText}>KLASSE:</Text>
@@ -2762,17 +3023,29 @@ export default function App() {
                 </>
               )}
 
-              {/* Attribute-Felder */}
               {attributeMap.map(({ label, key }) => (
-                <View key={label} style={{ marginBottom: 10 }}>
+                <View key={label} style={{ marginBottom: 12 }}>
                   <Text style={styles.buttonText}>{label.toUpperCase()}:</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity
                       style={styles.adjusterButton}
-                      onPress={() => adjustValue(key, -1)}
+                      onPress={() => {
+                        const value = parseInt(minusInputs[key] || '1');
+                        adjustValue(key, -value);
+                      }}
                     >
                       <Text style={styles.adjusterButtonText}>−</Text>
                     </TouchableOpacity>
+
+                    <TextInput
+                      style={[
+                        styles.input,
+                        { width: 40, marginHorizontal: 4, textAlign: 'center' },
+                      ]}
+                      keyboardType="numeric"
+                      value={minusInputs[key] || '1'}
+                      onChangeText={(text) => setMinusInputs((prev) => ({ ...prev, [key]: text }))}
+                    />
 
                     <TextInput
                       style={[styles.input, { flex: 1, textAlign: 'center' }]}
@@ -2800,9 +3073,22 @@ export default function App() {
                       }}
                     />
 
+                    <TextInput
+                      style={[
+                        styles.input,
+                        { width: 40, marginHorizontal: 4, textAlign: 'center' },
+                      ]}
+                      keyboardType="numeric"
+                      value={plusInputs[key] || '1'}
+                      onChangeText={(text) => setPlusInputs((prev) => ({ ...prev, [key]: text }))}
+                    />
+
                     <TouchableOpacity
                       style={styles.adjusterButton}
-                      onPress={() => adjustValue(key, 1)}
+                      onPress={() => {
+                        const value = parseInt(plusInputs[key] || '1');
+                        adjustValue(key, value);
+                      }}
                     >
                       <Text style={styles.adjusterButtonText}>＋</Text>
                     </TouchableOpacity>
@@ -2811,23 +3097,22 @@ export default function App() {
               ))}
             </ScrollView>
 
-            {/* BUTTONS */}
             <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.button}
+              <Pressable
+                style={styles.confirmButton}
                 onPress={newHero.id ? saveEditedHero : createHero}
               >
-                <Text style={styles.buttonText}>✅ Speichern</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteButton}
+                <Text style={styles.modalButtonText}>✅ Speichern</Text>
+              </Pressable>
+              <Pressable
+                style={styles.cancelButton}
                 onPress={() => {
                   setModalVisible(false);
                   setNewHero({});
                 }}
               >
-                <Text style={styles.buttonText}>❌ Abbrechen</Text>
-              </TouchableOpacity>
+                <Text style={styles.modalButtonText}>❌ Abbrechen</Text>
+              </Pressable>
             </View>
           </View>
         </Modal>
@@ -2846,8 +3131,17 @@ export default function App() {
                 value={editableInventory}
                 onChangeText={setEditableInventory}
               />
-              <Button title="✅ Speichern" onPress={saveInventory} />
-              <Button title="❌ Abbrechen" onPress={() => setInventoryModalVisible(false)} />
+              <View style={styles.buttonRow}>
+                <Pressable style={styles.confirmButton} onPress={saveInventory}>
+                  <Text style={styles.modalButtonText}>✅ Speichern</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.cancelButton}
+                  onPress={() => setInventoryModalVisible(false)}
+                >
+                  <Text style={styles.modalButtonText}>❌ Abbrechen</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </Modal>
